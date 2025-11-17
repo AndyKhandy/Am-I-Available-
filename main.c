@@ -3,6 +3,9 @@
 #include <string.h>
 
 #define MAXLEN 100
+#define MINUTESINDAY 1440
+#define START 1
+#define END 0
 
 typedef struct ClassNode {
     char name[MAXLEN];
@@ -18,8 +21,79 @@ typedef struct ClassNode {
 
 ClassNode* headMain = NULL;
 
-int startToMinutes(ClassNode* node) {
-    return (node->start_hour*60 + node->start_mins);
+int timeToMinutes(ClassNode* node, int choice) {
+    if(choice)
+    {
+        return (node->start_hour*60 + node->start_mins);
+    }
+    return (node->end_hour*60 + node->end_mins);
+}
+
+void printTime(int startMinutes, int endMinutes)
+{
+    //use width and padding to make the display look good
+    printf("%02d:%02d-%02d:%02d\n", startMinutes / 60, startMinutes % 60, endMinutes / 60, endMinutes % 60);
+}
+
+//day can be any letter with MTWYF. Ex M, TY, MWF, etc.
+void findFreeTime()
+{
+
+    if(headMain == NULL)
+    {
+        printf("No Classes :(\n");
+        printf("Free time from 0:00 to 24:00\n");
+        return;
+    }
+
+    int choice = 0;
+    char day;
+
+    do {
+         printf("\nWhich day would you like to see your free time for? (1-5): ");
+    } while(scanf("%d", &choice) <= 0 && (choice < 1 || choice > 5));
+    
+    switch(choice)
+    {
+        case 1:
+            day = 'M';
+            printf("Scheduele for Monday!\n\n");
+            break;
+        case 2:
+            day = 'T';
+            printf("Schedule for Tuesday\n\n");
+            break;
+        case 3:
+            day = 'W';
+            printf("Schedule for Wednesday\n\n");
+            break;
+        case 4:
+            day = 'Y';
+            printf("Schedule for Thursday\n\n");
+            break;
+        case 5:
+            day = 'F';
+            printf("Schedule for Friday\n\n");
+            break;
+    }
+
+    int previousMinutes = 0;
+    ClassNode* temp = headMain;
+    while(temp != NULL)
+    {
+            if(strchr(temp->days, day) != NULL)
+            {
+                printf("Free time from ");
+                printTime(previousMinutes,timeToMinutes(temp,START)-5);
+                printf("[%s] Class time from ", temp->name);
+                printTime(timeToMinutes(temp,START), timeToMinutes(temp,END));
+                previousMinutes = timeToMinutes(temp,END);
+            }
+            temp = temp->next;
+    }
+    printf("Free time from ");
+    printTime(previousMinutes, MINUTESINDAY);
+    printf("\n");
 }
 
 void printClasses(){
@@ -28,16 +102,29 @@ void printClasses(){
         printf("no classes :(");
         return;
     }
+
     ClassNode* temp = headMain;
     while(temp != NULL)
     {
-        printf("%s %s %d %d %d %d\n", temp->name, temp->days, temp->start_hour,temp->start_mins, temp->end_hour, temp->end_mins);
+        printf("%s %s ", temp->name, temp->days);
+        printTime(timeToMinutes(temp,START), timeToMinutes(temp,END));
         temp = temp->next;
     }
+    printf("\n");
 }
 
+void printDays()
+{
+    printf("1. Monday\n");
+    printf("2. Tuesday\n");
+    printf("3. Wednesday\n");
+    printf("4. Thursday\n");
+    printf("5. Friday\n");
+}
+
+
+
 void readClasses() {
-    char buffer[100];
     int classes = 0;
 
     FILE* fptr;
@@ -88,13 +175,13 @@ void readClasses() {
         //insert in least-to-greatest
         if (headMain == NULL) {
             headMain = class;
-        } else if (startToMinutes(headMain) > startToMinutes(class)) {
+        } else if (timeToMinutes(headMain,1) > timeToMinutes(class,1)) {
             class->next = headMain;
             headMain = class;
         } else {
             ClassNode* temp = headMain;
             //looking for last node that is either null or bigger
-            while(temp->next != NULL && startToMinutes(temp->next) < startToMinutes(class))
+            while(temp->next != NULL && timeToMinutes(temp->next,1) < timeToMinutes(class,1))
             {
                 temp = temp->next;
             }
@@ -106,7 +193,6 @@ void readClasses() {
         class = (ClassNode*)malloc(sizeof(ClassNode));
 
     }
-
     fclose(fptr);
 }
 
@@ -114,10 +200,12 @@ int main()
 { 
     int intake;
     do {
-        printf("== Class Management System ==\n1. Read Schedule\n2.Find Free Time\n3. Make New Schedule\n4. Exit\n\nChoose: ");
+        printf("== Class Management System ==\n1. Read Schedule\n2. Find Free Time\n3. Make New Schedule\n4. Exit\n\nChoose: ");
         while (scanf("%d", &intake) >= 0 && (intake < 1 || intake > 4)) {
             printf("Invalid input.\nChoose: ");
         }
+
+        char choice;
         switch(intake)
         {
             case 1:
@@ -125,6 +213,8 @@ int main()
                 printClasses();
                 break;
             case 2:
+                printDays();
+                findFreeTime();
                 break;
             case 3:
                 break;
