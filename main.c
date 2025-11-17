@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include<stdlib.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define MAXLEN 100
@@ -16,13 +16,19 @@ typedef struct ClassNode {
 
 } ClassNode;
 
-void printNodes(ClassNode* head){
-    if(head == NULL)
+ClassNode* headMain = NULL;
+
+int startToMinutes(ClassNode* node) {
+    return (node->start_hour*60 + node->start_mins);
+}
+
+void printClasses(){
+    if(headMain == NULL)
     {
         printf("no classes :(");
         return;
     }
-    ClassNode* temp = head;
+    ClassNode* temp = headMain;
     while(temp != NULL)
     {
         printf("%s %s %d %d %d %d\n", temp->name, temp->days, temp->start_hour,temp->start_mins, temp->end_hour, temp->end_mins);
@@ -30,8 +36,7 @@ void printNodes(ClassNode* head){
     }
 }
 
-int main()
-{
+void readClasses() {
     char buffer[100];
     int classes = 0;
 
@@ -43,13 +48,10 @@ int main()
     exit(1);
     }
 
-    ClassNode* headMain = NULL;
     ClassNode* class = (ClassNode*)malloc(sizeof(ClassNode));
 
-    while(fgets(buffer, sizeof(buffer), fptr) != NULL)
+    while(fscanf(fptr, "%[^~]~%[^~]~%s\n", class->name, class->days, class->time) == 3)
     {
-        buffer[strcspn(buffer,"\n")] = '\0';
-        sscanf(buffer, "%[^~]~%[^~]~%s", class->name, class->days, class->time);
         class->next = NULL;
 
         char* times = strtok(class->time, "-");
@@ -83,23 +85,52 @@ int main()
             times = strtok(NULL, "-");
         }
 
-
+        //insert in least-to-greatest
         if (headMain == NULL) {
+            headMain = class;
+        } else if (startToMinutes(headMain) > startToMinutes(class)) {
+            class->next = headMain;
             headMain = class;
         } else {
             ClassNode* temp = headMain;
-            while(temp->next != NULL)
+            //looking for last node that is either null or bigger
+            while(temp->next != NULL && startToMinutes(temp->next) < startToMinutes(class))
             {
                 temp = temp->next;
             }
+
+            //first bigger node placed on right of our node, our node inserted to the left
+            class->next = temp->next;
             temp->next = class;
         }
         class = (ClassNode*)malloc(sizeof(ClassNode));
 
     }
-    printNodes(headMain);
-
 
     fclose(fptr);
+}
+
+int main()
+{ 
+    int intake;
+    do {
+        printf("== Class Management System ==\n1. Read Schedule\n2.Find Free Time\n3. Make New Schedule\n4. Exit\n\nChoose: ");
+        while (scanf("%d", &intake) >= 0 && (intake < 1 || intake > 4)) {
+            printf("Invalid input.\nChoose: ");
+        }
+        switch(intake)
+        {
+            case 1:
+                readClasses();
+                printClasses();
+                break;
+            case 2:
+                break;
+            case 3:
+                break;
+        }
+
+    } while (intake != 4);
+
     return 0;
 }
