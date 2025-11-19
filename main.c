@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MAXLEN 100
 #define MINUTESINDAY 1440
@@ -21,6 +22,12 @@ typedef struct ClassNode {
 } ClassNode;
 
 ClassNode* headMain = NULL;
+
+void clearBuffer() {
+    int c;
+    while ((c=getchar()) != '\n' && c != EOF);
+    return;
+}
 
 int timeToMinutes(ClassNode* node, int choice) {
     if(choice)
@@ -228,6 +235,99 @@ void readClasses() {
     fclose(fptr);
 }
 
+void writeClasses(ClassNode* list, int num, const char* filename) {
+	FILE* fptr;
+    fptr = fopen(filename, "w");
+    if (fptr == NULL)
+    {
+		printf("Error!");
+		exit(1);
+    }
+	
+	//hope this works
+	for (int i = 0; i < num; i++) {
+		fprintf(fptr, "%s~%s~%d:%d-%d:%d\n", (list+i)->name, (list+i)->days, (list+i)->start_hour, (list+i)->start_mins, (list+i)->end_hour, (list+i)->end_mins);
+	}
+	
+	fclose(fptr);
+	
+	printf("\nSchedule written to file.\n\n");
+}
+
+void querySchedule() {
+	int num;
+	printf("\nEnter # of classes: ");
+	while (scanf("%d", &num) <= 0 || num < 0) {
+		printf("Invalid input.\nEnter number of classes: ");
+		clearBuffer();
+	}
+	clearBuffer();
+	
+	if (num == 0)
+		return;
+	
+	ClassNode* classes = (ClassNode*) malloc(sizeof(ClassNode)*num);
+	
+	//time to get info for classes
+	//name, days, start, end  
+	for (int i = 0; i < num; i++) {
+		printf("\nEnter name of class: ");
+		char name[MAXLEN];
+		fgets(name, MAXLEN, stdin);
+		name[strcspn(name, "\n")] = '\0';
+		
+		char days[6];
+		int n = -1;
+		
+		printf("Is it on Monday? (Y/N): ");
+		if (tolower(getchar()) == 'y' && ++n>=0)
+			days[n] = 'M';
+		getchar(); //eat the newline
+		printf("Is it on Tuesday? (Y/N): ");
+		if (tolower(getchar()) == 'y' && ++n>=0)
+			days[n] = 'T';
+		getchar(); //eat the newline
+		printf("Is it on Wednesday? (Y/N): ");
+		if (tolower(getchar()) == 'y' && ++n>=0)
+			days[n] = 'W';
+		getchar(); //eat the newline
+		printf("Is it on Thursday? (Y/N): ");
+		if (tolower(getchar()) == 'y' && ++n>=0)
+			days[n] = 'Y';
+		getchar(); //eat the newline
+		printf("Is it on Friday? (Y/N): ");
+		if (tolower(getchar()) == 'y' && ++n>=0)
+			days[n] = 'F';
+		getchar(); //eat the newline
+		days[n+1] = '\0';
+		
+		printf("What time does it start? (0:00-23:59): ");
+		int startHour, startMinute;
+		while (scanf("%d:%d", &startHour, &startMinute) != 2 || startHour < 0 || startHour > 23 || startMinute < 0 || startMinute > 59) {
+			printf("Invalid time! Must be 24 hour format\nWhat time does it start? (0:00-23:59): ");
+			clearBuffer();
+		}		
+		clearBuffer();
+		
+		printf("What time does it end? (0:00-23:59): ");
+		int endHour, endMinute;
+		while (scanf("%d:%d", &endHour, &endMinute) != 2 || endHour < 0 || endHour > 23 || endMinute < 0 || endMinute > 59) {
+			printf("Invalid time! Must be 24 hour format\nWhat time does it end? (0:00-23:59): ");
+			clearBuffer();
+		}		
+		clearBuffer();
+		
+		(classes+i)->start_hour = startHour;
+		(classes+i)->start_mins = startMinute;
+		(classes+i)->end_hour = endHour;
+		(classes+i)->end_mins = endMinute;
+		strcpy((classes+i)->name, name);
+		strcpy((classes+i)->days, days);
+	}
+	
+	writeClasses(classes, num, "student.txt");
+}
+
 int main()
 { 
     int intake;
@@ -249,6 +349,7 @@ int main()
                 findFreeTime();
                 break;
             case 3:
+				querySchedule();
                 break;
         }
 
