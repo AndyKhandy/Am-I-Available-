@@ -4,6 +4,7 @@
 
 #define MAXLEN 100
 #define MINUTESINDAY 1440
+#define HOURSINHALFDAY 12
 #define START 1
 #define END 0
 
@@ -32,7 +33,38 @@ int timeToMinutes(ClassNode* node, int choice) {
 void printTime(int startMinutes, int endMinutes)
 {
     //use width and padding to make the display look good
-    printf("%02d:%02d-%02d:%02d\n", startMinutes / 60, startMinutes % 60, endMinutes / 60, endMinutes % 60);
+    int hoursEndDisplay = endMinutes / 60;
+    int hoursStartDisplay = startMinutes / 60;
+
+    int minutesEndDisplay = endMinutes % 60;
+    int minutesStartDisplay = startMinutes % 60;
+
+    if(hoursStartDisplay >= HOURSINHALFDAY)
+    {
+        hoursStartDisplay %= 12;
+        if(hoursStartDisplay == 0)
+        {
+            hoursStartDisplay = 12;
+        }
+        printf("%02d:%02dpm-", hoursStartDisplay, minutesStartDisplay);
+    }
+    else{
+        printf("%02d:%02dam-", hoursStartDisplay, minutesStartDisplay);
+    }
+
+    if(hoursEndDisplay >= HOURSINHALFDAY)
+    {
+        hoursEndDisplay %= 12;
+        if(hoursEndDisplay == 0)
+        {
+            hoursEndDisplay = 12;
+        }
+        
+        printf("%02d:%02dpm\n", hoursEndDisplay, minutesEndDisplay);
+    }
+    else{
+        printf("%02d:%02dam\n", hoursEndDisplay, minutesEndDisplay);
+    }
 }
 
 //day can be any letter with MTWYF. Ex M, TY, MWF, etc.
