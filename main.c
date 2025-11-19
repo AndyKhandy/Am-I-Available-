@@ -23,12 +23,14 @@ typedef struct ClassNode {
 
 ClassNode* headMain = NULL;
 
+//clears the buffer whenever a user inputs an invalid input
 void clearBuffer() {
     int c;
     while ((c=getchar()) != '\n' && c != EOF);
     return;
 }
 
+//in this program time is convered to minutes for easier calculations + comparisons
 int timeToMinutes(ClassNode* node, int choice) {
     if(choice)
     {
@@ -46,9 +48,17 @@ void printTime(int startMinutes, int endMinutes)
     int minutesEndDisplay = endMinutes % 60;
     int minutesStartDisplay = startMinutes % 60;
 
-    if(hoursStartDisplay >= HOURSINHALFDAY)
+    //easier printing
+    if(startMinutes == 0 )
     {
+        printf("12:00am-");
+    }
+    else if(hoursStartDisplay >= HOURSINHALFDAY)
+    {
+        //converts the hours to the 12 hour clock version
         hoursStartDisplay %= 12;
+
+        //time in the 12 hour clock doesn't use 0 
         if(hoursStartDisplay == 0)
         {
             hoursStartDisplay = 12;
@@ -59,14 +69,18 @@ void printTime(int startMinutes, int endMinutes)
         printf("%02d:%02dam-", hoursStartDisplay, minutesStartDisplay);
     }
 
-    if(hoursEndDisplay >= HOURSINHALFDAY)
+    //easier printing
+    if(endMinutes == MINUTESINDAY)
     {
+        printf("12:00am\n");
+    }
+    else if(hoursEndDisplay >= HOURSINHALFDAY) {
+        //same logic done in the start time display
         hoursEndDisplay %= 12;
         if(hoursEndDisplay == 0)
         {
             hoursEndDisplay = 12;
         }
-        
         printf("%02d:%02dpm\n", hoursEndDisplay, minutesEndDisplay);
     }
     else{
@@ -77,7 +91,6 @@ void printTime(int startMinutes, int endMinutes)
 //day can be any letter with MTWYF. Ex M, TY, MWF, etc.
 void findFreeTime()
 {
-
     if(headMain == NULL)
     {
         printf("No Classes :(\n");
@@ -92,37 +105,42 @@ void findFreeTime()
          printf("\nWhich day would you like to see your free time for? (1-5): ");
     } while(scanf("%d", &choice) <= 0 && (choice < 1 || choice > 5));
     
+    printf("\n ==");
     switch(choice)
     {
         case 1:
             day = 'M';
-            printf("Scheduele for Monday!\n\n");
+            printf("SCHEDULE FOR MONDAY!");
             break;
         case 2:
             day = 'T';
-            printf("Schedule for Tuesday\n\n");
+            printf("SCHEDULE FOR TUESDAY!");
             break;
         case 3:
             day = 'W';
-            printf("Schedule for Wednesday\n\n");
+            printf("SCHEDULE FOR WEDNESDAY!");
             break;
         case 4:
+            //uses Y instead of TH since TH is not a single char
             day = 'Y';
-            printf("Schedule for Thursday\n\n");
+            printf("SCHEDULE FOR THURSDAY!");
             break;
         case 5:
             day = 'F';
-            printf("Schedule for Friday\n\n");
+            printf("SCHEDULE FOR FRIDAY!");
             break;
     }
+    printf(" ==\n");
 
     int previousMinutes = 0;
     ClassNode* temp = headMain;
     while(temp != NULL)
     {
+            //checks if the class days has the specific day character (i.e F for Friday)
             if(strchr(temp->days, day) != NULL)
             {
                 printf("Free time from ");
+                //displays a formatted 12 hour time
                 printTime(previousMinutes,timeToMinutes(temp,START)-5);
                 printf("[%s] Class time from ", temp->name);
                 printTime(timeToMinutes(temp,START), timeToMinutes(temp,END));
@@ -130,6 +148,7 @@ void findFreeTime()
             }
             temp = temp->next;
     }
+    //displays the final free time since it's at the end of all the classes assuming there is no class you take at midnight like 10pm to 12pm
     printf("Free time from ");
     printTime(previousMinutes, MINUTESINDAY);
     printf("\n");
@@ -142,9 +161,11 @@ void printClasses(){
         return;
     }
 
+    printf("== SCHEDULE FROM FILE == \n");
     ClassNode* temp = headMain;
     while(temp != NULL)
     {
+        //prints the class information just like how it's formatted in the txt file but with 12 hour clock time
         printf("%s %s ", temp->name, temp->days);
         printTime(timeToMinutes(temp,START), timeToMinutes(temp,END));
         temp = temp->next;
@@ -152,6 +173,7 @@ void printClasses(){
     printf("\n");
 }
 
+//makes the code more neat
 void printDays()
 {
     printf("1. Monday\n");
@@ -165,9 +187,17 @@ void printDays()
 
 void readClasses() {
     int classes = 0;
+    char filename[50];
+    printf("What file would you like to read your classes from?: [DON'T INCLUDE .TXT AT END] (Ex). student): ");
+    fgets(filename, sizeof(filename), stdin);
+    filename[strcspn(filename,"\n")] = '\0';
+
+    //adds .txt to the end so the user doesn't have to input it
+    strcat(filename, ".txt");
 
     FILE* fptr;
-    fptr = fopen("student.txt", "r");
+    fptr = fopen(filename, "r");
+    //check if the file opened properly
     if (fptr == NULL)
     {
     printf("Error!");
@@ -176,15 +206,19 @@ void readClasses() {
 
     ClassNode* class = (ClassNode*)malloc(sizeof(ClassNode));
 
+    //uses scanset to get information all the way until ~ sign
     while(fscanf(fptr, "%[^~]~%[^~]~%s\n", class->name, class->days, class->time) == 3)
     {
-        class->next = NULL;
-
+        //get's the individual integers from the time display
+        //ie 10:25-10:40 would get 10, 25, 10, 40
         char* times = strtok(class->time, "-");
+
+        //flag variable to swtich from start times to end times
         int start = 1;
 
         while(times != NULL)
         {
+            //checks to see if the start or end time has minutes or not (ex 10:40)
             if(strlen(times) > 2)
             {
                 if(start){
@@ -196,6 +230,7 @@ void readClasses() {
                     start = 1;
                 }
             }
+            //if the time doesn't have minutes (ex 15)
             else{
                if(start){
                     sscanf(times, "%d", &class->start_hour);
@@ -210,6 +245,8 @@ void readClasses() {
             }
             times = strtok(NULL, "-");
         }
+
+        class->next = NULL;
 
         //insert in least-to-greatest
         if (headMain == NULL) {
@@ -246,7 +283,7 @@ void writeClasses(ClassNode* list, int num, const char* filename) {
 	
 	//hope this works
 	for (int i = 0; i < num; i++) {
-		fprintf(fptr, "%s~%s~%d:%d-%d:%d\n", (list+i)->name, (list+i)->days, (list+i)->start_hour, (list+i)->start_mins, (list+i)->end_hour, (list+i)->end_mins);
+		fprintf(fptr, "%s~%s~%02d:%02d-%02d:%02d\n", (list+i)->name, (list+i)->days, (list+i)->start_hour, (list+i)->start_mins, (list+i)->end_hour, (list+i)->end_mins);
 	}
 	
 	fclose(fptr);
@@ -256,7 +293,16 @@ void writeClasses(ClassNode* list, int num, const char* filename) {
 
 void querySchedule() {
 	int num;
-	printf("\nEnter # of classes: ");
+    char filename[100];
+
+    printf(" == CUSTOMIZE SCHEDULE ==\n");
+    printf("Enter the name of the file you wish to save the schedule to [DON'T INCLUDE .TXT AT END](Ex. schedule): ");
+    fgets(filename, sizeof(filename), stdin);
+    filename[strcspn(filename,"\n")] = '\0';
+    strcat(filename, ".txt");
+
+    //clearBuffer() is used to clear input buffer so user can input a new slate of input
+	printf("Enter # of classes: ");
 	while (scanf("%d", &num) <= 0 || num < 0) {
 		printf("Invalid input.\nEnter number of classes: ");
 		clearBuffer();
@@ -325,7 +371,7 @@ void querySchedule() {
 		strcpy((classes+i)->days, days);
 	}
 	
-	writeClasses(classes, num, "student.txt");
+	writeClasses(classes, num, filename);
 }
 
 int main()
@@ -336,6 +382,7 @@ int main()
         while (scanf("%d", &intake) >= 0 && (intake < 1 || intake > 4)) {
             printf("Invalid input.\nChoose: ");
         }
+        getchar();
 
         char choice;
         switch(intake)
