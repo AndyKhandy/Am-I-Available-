@@ -88,15 +88,27 @@ void printTime(int startMinutes, int endMinutes)
     }
 }
 
+//makes the code more neat
+void printDays()
+{
+    printf("1. Monday\n");
+    printf("2. Tuesday\n");
+    printf("3. Wednesday\n");
+    printf("4. Thursday\n");
+    printf("5. Friday\n");
+}
+
 //day can be any letter with MTWYF. Ex M, TY, MWF, etc.
 void findFreeTime()
 {
     if(headMain == NULL)
     {
         printf("No Classes :(\n");
-        printf("Free time from 0:00 to 24:00\n");
+        printf("Free time from 0:00 to 24:00\n\n");
         return;
     }
+
+    printDays();
 
     int choice = 0;
     char day;
@@ -105,7 +117,7 @@ void findFreeTime()
          printf("\nWhich day would you like to see your free time for? (1-5): ");
     } while(scanf("%d", &choice) <= 0 && (choice < 1 || choice > 5));
     
-    printf("\n ==");
+    printf("\n == ");
     switch(choice)
     {
         case 1:
@@ -172,18 +184,6 @@ void printClasses(){
     }
     printf("\n");
 }
-
-//makes the code more neat
-void printDays()
-{
-    printf("1. Monday\n");
-    printf("2. Tuesday\n");
-    printf("3. Wednesday\n");
-    printf("4. Thursday\n");
-    printf("5. Friday\n");
-}
-
-
 
 void readClasses() {
     int classes = 0;
@@ -392,7 +392,6 @@ int main()
                 printClasses();
                 break;
             case 2:
-                printDays();
                 findFreeTime();
                 break;
             case 3:
