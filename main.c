@@ -22,6 +22,7 @@ typedef struct ClassNode {
 } ClassNode;
 
 ClassNode* headMain = NULL;
+ClassNode* headInput = NULL;
 
 //clears the buffer whenever a user inputs an invalid input
 void clearBuffer() {
@@ -185,6 +186,36 @@ void printClasses(){
     printf("\n");
 }
 
+int timeConflict(ClassNode* class)
+{
+    if(headInput == NULL)
+    {
+        return 0;
+    }
+    else{
+        ClassNode* temp = headInput;
+        while(temp!=NULL)
+        {
+            if(strstr(temp->days, class->days) != NULL)
+            {
+                int classStartMinutes = timeToMinutes(class, START);
+                int tempStartMinutes = timeToMinutes(temp, START);
+                int tempEndMinutes = timeToMinutes(temp, END);
+                if(classStartMinutes >= tempStartMinutes && classStartMinutes <= tempEndMinutes)
+                {
+                    printf("There is a time conflict between %s and %s!\n", class->name, temp->name);
+                    printf("%s lasts from ", temp->name);
+                    printTime(tempStartMinutes, tempEndMinutes);
+                    printf("Please enter a start time that doesn't conflict!\n");
+                    return 1;
+                }
+            }
+            temp = temp->next;
+        }
+    }
+    return 0;
+}
+
 void readClasses() {
     int classes = 0;
     char filename[50];
@@ -272,7 +303,7 @@ void readClasses() {
     fclose(fptr);
 }
 
-void writeClasses(ClassNode* list, int num, const char* filename) {
+void writeClasses(int num, const char* filename) {
 	FILE* fptr;
     fptr = fopen(filename, "w");
     if (fptr == NULL)
@@ -282,9 +313,12 @@ void writeClasses(ClassNode* list, int num, const char* filename) {
     }
 	
 	//hope this works
-	for (int i = 0; i < num; i++) {
-		fprintf(fptr, "%s~%s~%02d:%02d-%02d:%02d\n", (list+i)->name, (list+i)->days, (list+i)->start_hour, (list+i)->start_mins, (list+i)->end_hour, (list+i)->end_mins);
-	}
+    ClassNode* temp = headInput;
+    while(temp != NULL)
+    {
+        fprintf(fptr, "%s~%s~%02d:%02d-%02d:%02d\n", temp->name, temp->days, temp->start_hour, temp->start_mins, temp->end_hour, temp->end_mins);
+    }
+	
 	
 	fclose(fptr);
 	
@@ -312,15 +346,17 @@ void querySchedule() {
 	if (num == 0)
 		return;
 	
-	ClassNode* classes = (ClassNode*) malloc(sizeof(ClassNode)*num);
 	
 	//time to get info for classes
 	//name, days, start, end  
 	for (int i = 0; i < num; i++) {
+        ClassNode* classes = (ClassNode*) malloc(sizeof(ClassNode));
 		printf("\nEnter name of class: ");
 		char name[MAXLEN];
 		fgets(name, MAXLEN, stdin);
 		name[strcspn(name, "\n")] = '\0';
+
+        strcpy(classes->name, name);
 		
 		char days[6];
 		int n = -1;
@@ -346,14 +382,20 @@ void querySchedule() {
 			days[n] = 'F';
 		getchar(); //eat the newline
 		days[n+1] = '\0';
+        strcpy(classes->days, days);
 		
-		printf("What time does it start? (0:00-23:59): ");
-		int startHour, startMinute;
-		while (scanf("%d:%d", &startHour, &startMinute) != 2 || startHour < 0 || startHour > 23 || startMinute < 0 || startMinute > 59) {
-			printf("Invalid time! Must be 24 hour format\nWhat time does it start? (0:00-23:59): ");
-			clearBuffer();
-		}		
-		clearBuffer();
+        int startHour, startMinute;
+
+        do{
+            printf("What time does it start? (0:00-23:59): ");
+            while (scanf("%d:%d", &startHour, &startMinute) != 2 || startHour < 0 || startHour > 23 || startMinute < 0 || startMinute > 59) {
+                printf("Invalid time! Must be 24 hour format\nWhat time does it start? (0:00-23:59): ");
+                clearBuffer();
+            }		
+            clearBuffer();
+            classes->start_hour = startHour;
+		    classes->start_mins = startMinute;
+        } while(timeConflict(classes));
 		
 		printf("What time does it end? (0:00-23:59): ");
 		int endHour, endMinute;
@@ -363,15 +405,24 @@ void querySchedule() {
 		}		
 		clearBuffer();
 		
-		(classes+i)->start_hour = startHour;
-		(classes+i)->start_mins = startMinute;
-		(classes+i)->end_hour = endHour;
-		(classes+i)->end_mins = endMinute;
-		strcpy((classes+i)->name, name);
-		strcpy((classes+i)->days, days);
+		classes->end_hour = endHour;
+		classes->end_mins = endMinute;
+
+        if(headInput == NULL)
+        {
+            headInput = classes;
+        }
+        else{
+            ClassNode* temp = headInput;
+            while(temp->next != NULL)
+            {
+                temp = temp->next;
+            }
+            temp->next = classes;
+        }
 	}
 	
-	writeClasses(classes, num, filename);
+	writeClasses(num, filename);
 }
 
 int main()
