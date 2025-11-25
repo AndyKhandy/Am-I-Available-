@@ -305,7 +305,36 @@ void readClasses() {
 
 void writeClasses(int num, const char* filename) {
 	FILE* fptr;
-    fptr = fopen(filename, "w");
+
+    char mode;
+    int append = 1;
+    printf("Do you wish to append to %s or completely overwrite it with a new set of classes? (Y for append/N for overwrite it): ", filename);
+    scanf(" %c", &mode);
+    if(tolower(mode) == 'y')
+    {
+            printf("Wonderful! Appending to the file now...\n");
+    }
+    else{
+        printf("Are you sure? Overwritting it will erase all previous text (Y/N): ");
+        scanf(" %c", &mode);
+        if(tolower(mode) == 'y')
+        {
+        printf("Overwritting the file now with new classes...\n");
+        append = 0;
+        }
+           else{
+             printf("Alright! Appending to the file now...\n");
+        }
+    }
+
+    if(append)
+    {
+        fptr = fopen(filename, "a");
+    }
+    else{
+        fptr = fopen(filename, "w");
+    }
+
     if (fptr == NULL)
     {
 		printf("Error!");
@@ -317,8 +346,11 @@ void writeClasses(int num, const char* filename) {
     while(temp != NULL)
     {
         fprintf(fptr, "%s~%s~%02d:%02d-%02d:%02d\n", temp->name, temp->days, temp->start_hour, temp->start_mins, temp->end_hour, temp->end_mins);
+        temp = temp->next;
     }
-	
+
+    //clears the input linked list if the user continues the program and makes new schedule again
+	headInput = NULL;
 	
 	fclose(fptr);
 	
@@ -330,10 +362,6 @@ void querySchedule() {
     char filename[100];
 
     printf(" == CUSTOMIZE SCHEDULE ==\n");
-    printf("Enter the name of the file you wish to save the schedule to [DON'T INCLUDE .TXT AT END](Ex. schedule): ");
-    fgets(filename, sizeof(filename), stdin);
-    filename[strcspn(filename,"\n")] = '\0';
-    strcat(filename, ".txt");
 
     //clearBuffer() is used to clear input buffer so user can input a new slate of input
 	printf("Enter # of classes: ");
@@ -407,6 +435,7 @@ void querySchedule() {
 		
 		classes->end_hour = endHour;
 		classes->end_mins = endMinute;
+        classes->next = NULL;
 
         if(headInput == NULL)
         {
@@ -421,6 +450,12 @@ void querySchedule() {
             temp->next = classes;
         }
 	}
+
+    printf("\nEnter the name of the file you wish to save the schedule to [DON'T INCLUDE .TXT AT END](Ex. schedule): ");
+    fgets(filename, sizeof(filename), stdin);
+    filename[strcspn(filename,"\n")] = '\0';
+    strcat(filename, ".txt");
+
 	
 	writeClasses(num, filename);
 }
